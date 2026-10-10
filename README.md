@@ -102,7 +102,6 @@ Layout: `src/commands` (command modules) · `src/core` (registry, executor, argu
 If something fails on your server, run `tanveer-prime doctor` and open an issue with its output (it never prints secrets).
 
 ## Known limitations
-- The supplied ASCII logo's first glyph is drawn as a "Y" shape, so the art reads "YANVEER". It is kept verbatim as supplied; swapping in a "T" glyph is a one-line change in `src/utils/branding.js` (then run `node scripts/sync-installer.js`).
 - Global slash commands can take up to an hour to appear the first time; set a test server ID (`DEV_GUILD_ID`) for instant updates there.
 - Economy currency is virtual only (🪙). Nothing involves real money.
 
