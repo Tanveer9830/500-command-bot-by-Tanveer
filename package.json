@@ -1,0 +1,27 @@
+{
+  "name": "tanveer-prime-discord-bot",
+  "version": "1.0.0",
+  "description": "TANVEER PRIME — Discord bot with 500+ actions, slash and ! commands, SQLite, Lavalink music and an OAuth2 dashboard. MADE BY TANVEER | DISCORD: TANVEER5637",
+  "main": "src/index.js",
+  "private": true,
+  "license": "MIT",
+  "author": "TANVEER (Discord: tanveer5637)",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/index.js",
+    "register": "node scripts/register-commands.js",
+    "inventory": "node scripts/inventory.js",
+    "validate": "node scripts/validate-commands.js",
+    "doctor": "node scripts/doctor.js",
+    "backup": "node scripts/backup.js",
+    "migrate": "node scripts/migrate.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\""
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "discord.js": "14.27.0",
+    "dotenv": "18.0.7",
+    "express": "5.3.0",
+    "shoukaku": "4.3.0"
+  }
+}

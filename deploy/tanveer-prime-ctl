@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# `tanveer-prime` — management command installed by install.sh.   MADE BY TANVEER | DISCORD: TANVEER5637
+set -Eeuo pipefail
+CONF="${TP_CONF_FILE:-/etc/tanveer-prime/install.conf}"
+[ -r "$CONF" ] || { echo "tanveer-prime: ${CONF} not found. Is TANVEER PRIME installed?" >&2; exit 1; }
+# shellcheck disable=SC1090
+. "$CONF"
+: "${TP_APP_DIR:?}" "${TP_DATA_DIR:?}" "${TP_USER:?}" "${TP_SERVICE:?}" "${TP_ENV_FILE:?}"
+# shellcheck disable=SC1091
+. "$TP_APP_DIR/deploy/lib.sh"
+tp_ui_init
+
+need_root() { [ "$(id -u)" -eq 0 ] || exec sudo -- "$0" "$@"; }
+app() { ( cd "$TP_APP_DIR" && TP_ENV_FILE="$TP_ENV_FILE" DATA_DIR="$TP_DATA_DIR" node "$@" ); chown -R "$TP_USER:$TP_USER" "$TP_DATA_DIR" 2>/dev/null || true; }
+
+usage() {
+  tp_banner_compact "management console"
+  cat <<'USAGE'
+  tanveer-prime status        service state
+  tanveer-prime logs [-f]     recent log (add -f to follow)
+  tanveer-prime start|stop|restart
+  tanveer-prime health        is the bot connected to Discord right now?
+  tanveer-prime update        safe update: backup, pull, migrate, health check, auto-rollback
+  tanveer-prime doctor        diagnostics (never prints secrets)
+  tanveer-prime register      re-register slash commands
+  tanveer-prime backup        copy the database to <data>/backups
+  tanveer-prime config        edit the root-only configuration file, then restart
+  tanveer-prime invite        print the bot invite link
+  tanveer-prime version       show the installed version
+  tanveer-prime uninstall     remove the service and code (your data is KEPT)
+USAGE
+}
+
+cmd="${1:-help}"; [ $# -gt 0 ] && shift || true
+case "$cmd" in
+  status) systemctl status "$TP_SERVICE" --no-pager -l || true ;;
+  logs) if [ "${1:-}" = "-f" ]; then exec journalctl -u "$TP_SERVICE" -f -o cat; else journalctl -u "$TP_SERVICE" -n 80 --no-pager -o cat; fi ;;
+  start|stop|restart) need_root "$cmd" "$@"; systemctl "$cmd" "$TP_SERVICE"; tp_ok "$cmd: done" ;;
+  health)
+    if systemctl is-active --quiet "$TP_SERVICE" && journalctl -u "$TP_SERVICE" --since "-10 min" --no-pager -o cat 2>/dev/null | grep -q 'connected to Discord\|shard resumed'; then tp_ok "Running and connected to Discord"; else tp_warn "Not confirmed connected. Try: tanveer-prime logs"; exit 1; fi ;;
+  update) need_root update "$@"; exec bash "$TP_APP_DIR/update.sh" "$@" ;;
+  doctor) need_root doctor "$@"; app scripts/doctor.js ;;
+  register) need_root register "$@"; app scripts/register-commands.js ;;
+  backup) need_root backup "$@"; app scripts/backup.js ;;
+  config)
+    need_root config "$@"
+    "${EDITOR:-nano}" "$TP_ENV_FILE" 2>/dev/null || vi "$TP_ENV_FILE"
+    chmod 600 "$TP_ENV_FILE"; read -r -p "Restart the bot now? [Y/n] " a || a=n
+    case "$a" in [Nn]*) tp_info "Not restarted. Run: tanveer-prime restart" ;; *) systemctl restart "$TP_SERVICE"; tp_ok "Restarted" ;; esac ;;
+  invite) echo "https://discord.com/oauth2/authorize?client_id=${TP_CLIENT_ID:-YOUR_CLIENT_ID}&scope=bot%20applications.commands&permissions=${TP_INVITE_PERMS:-1100454685783}" ;;
+  version) node -p "require('$TP_APP_DIR/package.json').version" | sed 's/^/TANVEER PRIME v/'; git -C "$TP_APP_DIR" log -1 --format='commit %h (%cd)' --date=short 2>/dev/null || true ;;
+  uninstall) need_root uninstall "$@"; exec bash "$TP_APP_DIR/uninstall.sh" "$@" ;;
+  help|-h|--help) usage ;;
+  *) tp_err "Unknown command '$cmd'"; usage; exit 2 ;;
+esac
