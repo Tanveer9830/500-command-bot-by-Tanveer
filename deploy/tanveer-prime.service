@@ -1,0 +1,49 @@
+# TANVEER PRIME systemd unit — rendered by install.sh (placeholders between @ signs).
+# MADE BY TANVEER | DISCORD: TANVEER5637
+[Unit]
+Description=TANVEER PRIME Discord bot (MADE BY TANVEER | DISCORD: TANVEER5637)
+Documentation=https://github.com/Tanveer9830/500-command-bot-by-Tanveer
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=6
+
+[Service]
+Type=simple
+User=@USER@
+Group=@USER@
+WorkingDirectory=@APP_DIR@
+EnvironmentFile=@ENV_FILE@
+Environment=NODE_ENV=production
+ExecStart=@NODE@ src/index.js
+Restart=on-failure
+RestartSec=5
+# Exit code 78 = invalid configuration: do not crash-loop, wait for the owner to fix the env file.
+RestartPreventExitStatus=78
+TimeoutStopSec=20
+KillSignal=SIGTERM
+SyslogIdentifier=tanveer-prime
+UMask=0077
+LimitNOFILE=65536
+
+# Hardening: the bot can write only to its data directory and never gains privileges.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=@DATA_DIR@
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
